@@ -66,7 +66,7 @@ func exec(p types.Plugin) error {
 	//doing this outside of subpackage to support potential use cases where the
 	//docker hub repo and docker hub repo are not the same
 	dockerImage := fmt.Sprintf("%s/%s", p.DockerHubUser, p.DockerHubRepo)
-	imageTags, err := tag.GenerateDockerImageTags(p)
+	imageTags, err := tag.CreateDockerImageTags(p)
 
 	if err != nil {
 		return err

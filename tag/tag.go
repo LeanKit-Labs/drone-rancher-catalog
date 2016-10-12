@@ -15,10 +15,10 @@ import (
 	}
 */
 
-//GenerateDockerImageTags takes plugin information and returns a list
+//CreateDockerImageTags takes plugin information and returns a list
 //of tags to use when publishing the project image to Docker Hub
 //TODO: this function might not need to take an error
-func GenerateDockerImageTags(p types.Plugin) ([]string, error) {
+func CreateDockerImageTags(p types.Plugin) ([]string, error) {
 	/*TODOS:
 				  1) if the branch being built is master 2 tags should be returned
 		        -> latest
