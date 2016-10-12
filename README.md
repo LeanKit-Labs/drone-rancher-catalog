@@ -6,7 +6,7 @@
 The idea behing this plugin is to enable deployment of applications via Docker Hub and Rancher stacks.
 At a high level, this plugin will do the following after a successful Drone CI build
 
-* Generate tag(s) for the resulting image
+* Generate build tag(s)
 * Build Docker images for each tag
 * Push the images to Docker Hub
 * Generate a Rancher catalog entry from a template defined in it's repository
@@ -15,9 +15,9 @@ At a high level, this plugin will do the following after a successful Drone CI b
 
 The plugin pushes 2 different kinds of images depending on the build context
 
-#### Release images
+#### Release Images
 
-If the branch being built is ```master``` the plugin build an image with the ```latest``` tag and one with a semver tag
+If the branch being built is ```master``` the plugin build an image with the latest tag and one with a version tag
 
 EX:
 * someRepo/someImage:latest
@@ -33,9 +33,9 @@ The short commit SHA is a 7 char substring of the full commit ala ```git rev-par
 
 Ex:
 
-* leankit/myRepo:leankit_myProject_feature-x_1.0.0_22_absd3f5
+* leankit/myRepo:leankit_myProject_feature-x_absd3f51.0.0_22
 
-### Detecting project version
+### Detecting Project Version
 
 If the plugin is given a __project_type__ argument, it will attempt to look for a version in the following location
 
@@ -44,10 +44,10 @@ If the plugin is given a __project_type__ argument, it will attempt to look for 
 
 __Note__ support for other projects is planned to be added over time
 
-If the project being built is unsupported, or if there is an issue obtaining the version the following will occurr
+If the project being built is unsupported, or if there is an issue obtaining the version the following will occurr:
 
-* Release Build (master) -> only the ```latest``` tag will be pushed
-* Test Builds -> the version will be excluded from the tag entirely
+* Release Builds (master) -> only the ```latest``` tag will be pushed
+* Test Builds -> the version will be excluded from the tag
 
 ### Requirements
 
