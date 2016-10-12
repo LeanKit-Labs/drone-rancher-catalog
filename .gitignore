@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+drone-rancher-catalog
+vendor/
+run-local.sh
+.DS_Store
+

@@ -1,0 +1,12 @@
+package: github.com/LeanKit-Labs/drone-rancher-catalog
+import:
+- package: github.com/codegangsta/cli
+  version: ^1.18.1
+- package: github.com/joho/godotenv
+  subpackages:
+  - autoload
+- package: github.com/drone/drone-go
+  version: eaa41f7836a191224ec5702d2458db07882ec269
+  subpackages:
+  - plugin
+  - drone
