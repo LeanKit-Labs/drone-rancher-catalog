@@ -10,3 +10,5 @@ import:
   subpackages:
   - plugin
   - drone
+- package: github.com/asaskevich/govalidator
+  version: ^5.0.0

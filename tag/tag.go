@@ -1,38 +1,75 @@
 package tag
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/LeanKit-Labs/drone-rancher-catalog/types"
 )
 
-/*
-	vars for reading semVer data
-	type projectJSON struct {
-		Version string `json:"version"`
+//vars for reading semVer data
+type projectJSON struct {
+	Version string `json:"version"`
+}
+
+var fileInfo struct {
+	Version string `json:"version"`
+}
+
+func getJSONVersionReader(fname string) func() (string, error) {
+	return func() (string, error) {
+		fileData, err := os.Open(fname)
+		if err != nil {
+			return "", err
+		}
+
+		jsonParser := json.NewDecoder(fileData)
+		if err = jsonParser.Decode(&fileInfo); err != nil {
+			return "", err
+		}
+
+		return fileInfo.Version, nil
 	}
-	var projectMap = map[string]string{
-		"node":        "package.json",
-		"dotnet-core": "project.json",
-	}
-*/
+}
+
+var projectMap = map[string]func() (string, error){
+	"node":        getJSONVersionReader("package.json"),
+	"dotnet-core": getJSONVersionReader("project.json"),
+}
+
+func replaceUnderscores(str string) string {
+	return strings.Replace(str, "_", "-", -1)
+}
 
 //CreateDockerImageTags takes plugin information and returns a list
 //of tags to use when publishing the project image to Docker Hub
 //TODO: this function might not need to take an error
 func CreateDockerImageTags(p types.Plugin) ([]string, error) {
-	/*TODOS:
-				  1) if the branch being built is master 2 tags should be returned
-		        -> latest
-		        -> v<semVer>
 
-		        if the semver can not be determined, then just return latest
+	//read version
+	version := ""
+	if getVersion, ok := projectMap[p.ProjectType]; ok {
+		if val, err := getVersion(); err == nil {
+			version = val
+		} else {
+			return []string{}, err
+		}
+	}
 
-		      2) if the branch being built is not master then return 1 tag of the form
-		         -> githubOwner_githubRepo_branch_semVer_globalProjectNum_shortCommitSHA
+	//handle master tag
+	if p.Branch == "master" {
+		if version != "" { //default master format is v<smver> of the version is present or master_build_shaw if version is not found
+			return []string{fmt.Sprintf("v%s", version), "latest"}, nil
+		}
+		return []string{fmt.Sprintf("master_%d_%s", p.Build.Number, p.Build.Commit[:7]), "latest"}, nil
+	}
 
-	           shortCommitSHA can be just a 7 char sub string (git rev-parse --short)
-
-		         if the semver can not be determined then it should not be included in the tag
-	*/
-
-	return []string{}, nil
+	//return the long tag
+	//githubOwner_githubRepo_branch_semVer_globalProjectNum_shortCommitSHA
+	if version != "" {
+		return []string{fmt.Sprintf("%s_%s_%s_%s_%d_%s", p.Repo.Owner, p.Repo.Name, p.Build.Branch, version, p.Build.Number, p.Build.Commit[:7])}, nil
+	}
+	return []string{fmt.Sprintf("%s_%s_%s_%d_%s", p.Repo.Owner, p.Repo.Name, p.Build.Branch, p.Build.Number, p.Build.Commit[:7])}, nil
 }
