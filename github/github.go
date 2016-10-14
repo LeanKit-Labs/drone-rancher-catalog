@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-	"os"
+	"strconv"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -42,7 +42,7 @@ type BuiltTemplate struct {
 }
 
 type folder struct {
-	Name  string      `json:"name"`
+	Name string `json:"name"`
 }
 
 type tmplArguments struct {
@@ -86,7 +86,7 @@ func getBytesFromURL(client *http.Client, url string, token string) ([]byte, int
 	contents, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		return nil, nil, err
+		return nil, response.StatusCode, err
 	}
 	return contents, response.StatusCode, nil
 }
@@ -115,9 +115,9 @@ func NewGenericTemplate(owner string, repo string, token string) (*GenericTempla
 	for _, file := range templateDir {
 		switch file.Name {
 		case "catalogIcon.png":
-			fileContents, err := getBytesFromURL(client, file.DownloadURL, token)
+			fileContents, _, err := getBytesFromURL(client, file.DownloadURL, token)
 			if err != nil {
-				return nil, _, err
+				return nil, err
 			}
 			result.Icon = fileContents
 		case "config.tmpl":
@@ -198,33 +198,35 @@ func (t *GenericTemplate) SubBuildInfo(p *types.Plugin, tag string) (*BuiltTempl
 		return nil, err3
 	}
 	final.Config = val3
-	return final, nil
+	return &final, nil
 }
 
-func getTemplateNum(client string, url string, token string) (int, err){
+func getTemplateNum(client *http.Client, url string, token string) (int, error) {
 	folderBytes, code, err := getBytesFromURL(client, url, token)
-	if err != {
+	if err != nil {
 		return -1, err
 	}
-	if (code == 404) {
+	if code == 404 {
 		return 0, nil
 	}
 	var folders []folder
 	currentTemplate := -1 //empty folder
 	if json.Unmarshal(folderBytes, &folders) != nil {
-		for _,folder := range folders {
-			number := strconv.Atoi(folder.Name)
-			if ( number > currentTemplate){
+		for _, folder := range folders {
+			number, err := strconv.Atoi(folder.Name)
+			if err != nil {
+				return 0, err
+			}
+			if number > currentTemplate {
 				currentTemplate = number
 			}
 		}
 	}
-	return currentTemplate+1, nil
-	
+	return currentTemplate + 1, nil
 
 }
 
-func commitFile(githubClient github.Client, owner string, repo string, path string, contents []byte, message string) error {
+func commitFile(githubClient *github.Client, owner string, repo string, path string, contents []byte, message string) error {
 	branch := "master"
 	opts := github.RepositoryContentFileOptions{
 		Message: &message,
@@ -239,8 +241,8 @@ func commitFile(githubClient github.Client, owner string, repo string, path stri
 }
 
 //Commit commits the file to github
-func (t *BuiltTemplate) Commit(token string, owner string, repo string, buildNum int)(CatalogInfo, error){
-	token := oauth2.Token{AccessToken: token}
+func (t *BuiltTemplate) Commit(accessToken string, owner string, repo string, buildNum int) (*CatalogInfo, error) {
+	token := oauth2.Token{AccessToken: accessToken}
 	tokenSource := oauth2.StaticTokenSource(&token)
 	oauthClient := oauth2.NewClient(oauth2.NoContext, tokenSource)
 	githubClient := github.NewClient(oauthClient)
@@ -248,25 +250,25 @@ func (t *BuiltTemplate) Commit(token string, owner string, repo string, buildNum
 	client := &http.Client{
 		Timeout: time.Second * 60,
 	}
-	number, err := getTemplateNum(client, fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/templates/%s", owner, repo, t.branch), token)
+	number, err := getTemplateNum(client, fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/templates/%s", owner, repo, t.branch), accessToken)
 	if err != nil {
 		return nil, err
 	}
 	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/catalogIcon.png", t.branch), t.Icon, fmt.Sprintf("Drone Build #%d: Changine Icon", buildNum)); err != nil {
 		return nil, err
 	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/config.yml", t.branch), []byte(t.Config)], fmt.Sprintf("Drone Build #%d: Changine config.yml", buildNum)); err != nil {
+	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/config.yml", t.branch), []byte(t.Config), fmt.Sprintf("Drone Build #%d: Changine config.yml", buildNum)); err != nil {
 		return nil, err
 	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/docker-compose.yml", t.branch), []byte(t.DockerCompose)], fmt.Sprintf("Drone Build #%d: Changine docker-compose.yml", buildNum)); err != nil {
+	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/docker-compose.yml", t.branch, number), []byte(t.DockerCompose), fmt.Sprintf("Drone Build #%d: Changine docker-compose.yml", buildNum)); err != nil {
 		return nil, err
 	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/rancher-compose.yml", t.branch), []byte(t.RancherCompose)], fmt.Sprintf("Drone Build #%d: Changine rancher-compose.yml", buildNum)); err != nil {
+	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/rancher-compose.yml", t.branch, number), []byte(t.RancherCompose), fmt.Sprintf("Drone Build #%d: Changine rancher-compose.yml", buildNum)); err != nil {
 		return nil, err
 	}
-	var info CatalogInfo;
+	var info CatalogInfo
 	info.catalogRepo = fmt.Sprint("%s/%s", owner, repo)
 	info.version = number
 	info.branch = t.branch
-	return info nil
+	return &info, nil
 }

@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/LeanKit-Labs/drone-rancher-catalog/docker"
 	"github.com/LeanKit-Labs/drone-rancher-catalog/github"
 	"github.com/LeanKit-Labs/drone-rancher-catalog/tag"
@@ -62,7 +64,6 @@ func main() {
 }
 
 func exec(p types.Plugin) error {
-	fmt.Println("we in this")
 
 	//build tag
 	//doing this outside of subpackage to support potential use cases where the
@@ -73,7 +74,6 @@ func exec(p types.Plugin) error {
 	if err != nil {
 		return err
 	}
-
 	//publish docker image
 	if err := docker.PublishImage(dockerImage, imageTags, p); err != nil {
 		return err
@@ -83,19 +83,19 @@ func exec(p types.Plugin) error {
 		return nil
 	}
 	//generate and publish catalog entry
-	template, err := github.NewGenericTemplate(p.Owner, p.Repo, p.GithubAccessToken)
+	template, err := github.NewGenericTemplate(p.Repo.Owner, p.Repo.Name, p.GithubAccessToken)
 	if err != nil {
 		return err
 	}
-	var buildCatalogs []github.CatalogInfo
+	var buildCatalogs []*github.CatalogInfo
 
 	for _, tag := range imageTags {
 		if tag != "latest" {
-			completedTemplate, err := template.SubBuildInfo(p, tag)
+			completedTemplate, err := template.SubBuildInfo(&p, tag)
 			if err != nil {
 				return err
 			}
-			info, err2 := completedTemplate.commit(p.GithubAccessToken, p.Owner, p.Repo, p.Build.Number)
+			info, err2 := completedTemplate.Commit(p.GithubAccessToken, p.Repo.Owner, p.Repo.Name, p.Build.Number)
 			if err2 != nil {
 				return err2
 			}
@@ -104,7 +104,7 @@ func exec(p types.Plugin) error {
 	}
 
 	//output catalog entry info to temp file for downstream deployment plugin
-	data, err := yml.Marshal(&buildCatalogs)
+	data, err := yaml.Marshal(&buildCatalogs)
 	if err != nil {
 		return err
 	}
