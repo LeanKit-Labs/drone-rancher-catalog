@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/LeanKit-Labs/drone-rancher-catalog/docker"
+	"github.com/LeanKit-Labs/drone-rancher-catalog/github"
 	"github.com/LeanKit-Labs/drone-rancher-catalog/tag"
 	"github.com/LeanKit-Labs/drone-rancher-catalog/types"
 	"github.com/drone/drone-go/drone"
@@ -77,8 +79,38 @@ func exec(p types.Plugin) error {
 		return err
 	}
 
+	if p.DryRun { ///exit if dry run
+		return nil
+	}
 	//generate and publish catalog entry
+	template, err := github.NewGenericTemplate(p.Owner, p.Repo, p.GithubAccessToken)
+	if err != nil {
+		return err
+	}
+	var buildCatalogs []github.CatalogInfo
+
+	for _, tag := range imageTags {
+		if tag != "latest" {
+			completedTemplate, err := template.SubBuildInfo(p, tag)
+			if err != nil {
+				return err
+			}
+			info, err2 := completedTemplate.commit(p.GithubAccessToken, p.Owner, p.Repo, p.Build.Number)
+			if err2 != nil {
+				return err2
+			}
+			buildCatalogs = append(buildCatalogs, info)
+		}
+	}
+
 	//output catalog entry info to temp file for downstream deployment plugin
+	data, err := yml.Marshal(&buildCatalogs)
+	if err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(".CatalogData.yml", []byte(data), 0644); err != nil {
+		return err
+	}
 
 	return nil
 }

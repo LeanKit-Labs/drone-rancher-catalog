@@ -1,5 +1,5 @@
-hash: 886c247b3ae71297feeb49f36511c19ada00fefba06d1c598c8f2f1b889255cf
-updated: 2016-10-12T15:29:24.607732629-05:00
+hash: 46d4bdc1d31885a16bf62e400509e5a79daf0e01d3599f8a56f24e681deaffd2
+updated: 2016-10-14T10:55:14.664914574-05:00
 imports:
 - name: github.com/asaskevich/govalidator
   version: 7b3beb6df3c42abd3509abfc3bcacc0fbfb7c877
@@ -14,6 +14,14 @@ imports:
   version: 1f49d83d9aa00e6ce4fc8258c71cc7786aec968a
   subpackages:
   - proto
+- name: github.com/google/go-github
+  version: 1bc362c7737e51014af7299e016444b654095ad9
+  subpackages:
+  - github
+- name: github.com/google/go-querystring
+  version: 9235644dd9e52eeae6fa48efd539fdc351a0af53
+  subpackages:
+  - query
 - name: github.com/joho/godotenv
   version: 4ed13390c0acd2ff4e371e64d8b97c8954138243
   subpackages:
@@ -36,4 +44,6 @@ imports:
   - internal/remote_api
   - internal/urlfetch
   - urlfetch
+- name: gopkg.in/yaml.v2
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
 testImports: []
