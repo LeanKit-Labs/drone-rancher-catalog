@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -68,7 +69,7 @@ func exec(p types.Plugin) error {
 	//build tag
 	//doing this outside of subpackage to support potential use cases where the
 	//docker hub repo and docker hub repo are not the same
-	dockerImage := fmt.Sprintf("%s/%s", p.DockerHubUser, p.DockerHubRepo)
+	//dockerImage := fmt.Sprintf("%s/%s", p.DockerHubUser, p.DockerHubRepo)
 	imageTags, err := tag.CreateDockerImageTags(p)
 
 	if err != nil {
@@ -82,12 +83,13 @@ func exec(p types.Plugin) error {
 	if p.DryRun { ///exit if dry run
 		return nil
 	}
+	rancherCatalogInfo := strings.Split(p.RancherCatalogRepo, "/")
 	//generate and publish catalog entry
-	template, err := github.NewGenericTemplate(p.Repo.Owner, p.Repo.Name, p.GithubAccessToken)
+	template, err := github.NewGenericTemplate(rancherCatalogInfo[0], rancherCatalogInfo[1], p.GithubAccessToken)
 	if err != nil {
 		return err
 	}
-	var buildCatalogs []*github.CatalogInfo
+	var buildCatalogs []github.CatalogInfo
 
 	for _, tag := range imageTags {
 		if tag != "latest" {
@@ -95,16 +97,16 @@ func exec(p types.Plugin) error {
 			if err != nil {
 				return err
 			}
-			info, err2 := completedTemplate.Commit(p.GithubAccessToken, p.Repo.Owner, p.Repo.Name, p.Build.Number)
+			info, err2 := completedTemplate.Commit(p.GithubAccessToken, rancherCatalogInfo[0], rancherCatalogInfo[1], p.Build.Number)
 			if err2 != nil {
 				return err2
 			}
-			buildCatalogs = append(buildCatalogs, info)
+			buildCatalogs = append(buildCatalogs, *info)
 		}
 	}
-
 	//output catalog entry info to temp file for downstream deployment plugin
 	data, err := yaml.Marshal(&buildCatalogs)
+	fmt.Println(buildCatalogs)
 	if err != nil {
 		return err
 	}

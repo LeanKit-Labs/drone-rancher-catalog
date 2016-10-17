@@ -30,3 +30,5 @@ run.sh
 package.json
 project.json
 testDir/
+build.sh
+.CatalogData.yml 

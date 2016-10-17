@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,9 +19,9 @@ import (
 )
 
 type CatalogInfo struct {
-	catalogRepo string
-	version     int
-	branch      string
+	CatalogRepo string `yaml:"catalogRepo"`
+	Version     int    `yaml:"version"`
+	Branch      string `yaml:"branch"`
 }
 
 //Template a data struture to store the generic catalog template
@@ -56,22 +57,11 @@ type templateFile struct {
 	DownloadURL string `json:"download_url"`
 }
 
-//StringWriter write to a string
-type StringWriter struct {
-	Value *string
-}
-
-func (w StringWriter) Write(p []byte) (n int, err error) {
-	*w.Value = string(p)
-	return len(*w.Value), nil
-}
-
 func getBytesFromURL(client *http.Client, url string, token string) ([]byte, int, error) {
 	//build request
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Print(err.Error())
-		return nil, -1, nil
+		return nil, -1, err
 	}
 	request.SetBasicAuth(token, "x-oauth-basic")
 	request.Close = true
@@ -137,10 +127,9 @@ func NewGenericTemplate(owner string, repo string, token string) (*GenericTempla
 			if err != nil {
 				return nil, err
 			}
-			result.DockerCompose = string(fileContents)
+			result.RancherCompose = string(fileContents)
 		}
 	}
-
 	if len(result.Icon) == 0 {
 		return nil, errors.New("catalogIcon.png not found")
 	}
@@ -169,11 +158,11 @@ func fixTemplate(p *types.Plugin, name string, templatedString, tag string) (str
 	args.Count = p.Build.Number
 	args.Tag = tag
 
-	var writer StringWriter
-	if err := tmpl.Execute(writer, p); err != nil {
+	var doc bytes.Buffer
+	if err := tmpl.Execute(&doc, args); err != nil {
 		return "", err
 	}
-	return *writer.Value, nil
+	return doc.String(), nil
 }
 
 //SubBuildInfo replaces the templated values in the file
@@ -182,6 +171,8 @@ func (t *GenericTemplate) SubBuildInfo(p *types.Plugin, tag string) (*BuiltTempl
 	var final BuiltTemplate
 	final.branch = p.Branch
 	final.tag = tag
+
+	final.Icon = t.Icon
 
 	val1, err1 := fixTemplate(p, "docker-compose.yml", t.DockerCompose, tag)
 	if err1 != nil {
@@ -211,12 +202,13 @@ func getTemplateNum(client *http.Client, url string, token string) (int, error) 
 	}
 	var folders []folder
 	currentTemplate := -1 //empty folder
-	if json.Unmarshal(folderBytes, &folders) != nil {
-		for _, folder := range folders {
-			number, err := strconv.Atoi(folder.Name)
-			if err != nil {
-				return 0, err
-			}
+	err = json.Unmarshal(folderBytes, &folders)
+	if err != nil {
+		return -1, err
+	}
+
+	for _, folder := range folders {
+		if number, err := strconv.Atoi(folder.Name); err == nil {
 			if number > currentTemplate {
 				currentTemplate = number
 			}
@@ -233,6 +225,7 @@ func commitFile(githubClient *github.Client, owner string, repo string, path str
 		Content: contents,
 		Branch:  &branch,
 	}
+	fmt.Println(path)
 	_, _, err := githubClient.Repositories.CreateFile(owner, repo, path, &opts)
 	if err != nil {
 		return err
@@ -242,6 +235,7 @@ func commitFile(githubClient *github.Client, owner string, repo string, path str
 
 //Commit commits the file to github
 func (t *BuiltTemplate) Commit(accessToken string, owner string, repo string, buildNum int) (*CatalogInfo, error) {
+
 	token := oauth2.Token{AccessToken: accessToken}
 	tokenSource := oauth2.StaticTokenSource(&token)
 	oauthClient := oauth2.NewClient(oauth2.NoContext, tokenSource)
@@ -254,11 +248,13 @@ func (t *BuiltTemplate) Commit(accessToken string, owner string, repo string, bu
 	if err != nil {
 		return nil, err
 	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/catalogIcon.png", t.branch), t.Icon, fmt.Sprintf("Drone Build #%d: Changine Icon", buildNum)); err != nil {
-		return nil, err
-	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/config.yml", t.branch), []byte(t.Config), fmt.Sprintf("Drone Build #%d: Changine config.yml", buildNum)); err != nil {
-		return nil, err
+	if number == 0 { //new branch
+		if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/catalogIcon.png", t.branch), t.Icon, fmt.Sprintf("Drone Build #%d: Changine Icon", buildNum)); err != nil {
+			return nil, err
+		}
+		if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/config.yml", t.branch), []byte(t.Config), fmt.Sprintf("Drone Build #%d: Changine config.yml", buildNum)); err != nil {
+			return nil, err
+		}
 	}
 	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/docker-compose.yml", t.branch, number), []byte(t.DockerCompose), fmt.Sprintf("Drone Build #%d: Changine docker-compose.yml", buildNum)); err != nil {
 		return nil, err
@@ -267,8 +263,8 @@ func (t *BuiltTemplate) Commit(accessToken string, owner string, repo string, bu
 		return nil, err
 	}
 	var info CatalogInfo
-	info.catalogRepo = fmt.Sprint("%s/%s", owner, repo)
-	info.version = number
-	info.branch = t.branch
+	info.CatalogRepo = fmt.Sprintf("%s/%s", owner, repo)
+	info.Version = number
+	info.Branch = t.branch
 	return &info, nil
 }

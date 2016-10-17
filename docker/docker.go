@@ -22,6 +22,7 @@ var workingDir = ""
 //PublishImage builds a docker image and publishes it to docker hub
 //TODO workspace could just be the Dockerfile path
 func PublishImage(image string, imageTags []string, p types.Plugin) error {
+
 	workingDir = p.Workspace
 
 	fmt.Println("starting daemon")
@@ -75,7 +76,7 @@ func startDaemon(storageDriver string) error {
 		//poll until daemon is available or throw error
 		isUp := false
 		for i := 1; i <= 3; i++ {
-			if err := createCmd([]string{"info"}, false).Run(); err == nil {
+			if err := createCmd([]string{"info"}, true).Run(); err == nil {
 				isUp = true
 				break
 			}
@@ -116,7 +117,7 @@ func buildImage(image string) error {
 		".",
 	}
 
-	return createCmd(args, false).Run()
+	return createCmd(args, true).Run()
 }
 
 func pushImage(image string) error {
@@ -124,7 +125,6 @@ func pushImage(image string) error {
 		"push",
 		image,
 	}
-
 	return createCmd(args, false).Run()
 }
 
