@@ -92,31 +92,48 @@ var otherProjectMaster = types.Plugin{
 func TestHookImage(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("Tag", func() {
-		g.It("Check the proper tags are built", func() {
-			if tags, err := CreateDockerImageTags(nodeProjectDev); true {
-				g.Assert(err).Equal(nil)
-				g.Assert(tags).Equal([]string{"owner_repo_my-Branch_1.0.0_0_0123456"})
-			}
-			if tags, err := CreateDockerImageTags(dotnetProjectDev); true {
-				g.Assert(err).Equal(nil)
-				g.Assert(tags).Equal([]string{"owner_repo_my-Branch_1.0.1_0_0123456"})
-			}
-			if tags, err := CreateDockerImageTags(otherProjectDev); true {
-				g.Assert(err).Equal(nil)
-				g.Assert(tags).Equal([]string{"owner_repo_my-Branch_0_0123456"})
-			}
-			if tags, err := CreateDockerImageTags(nodeProjectMaster); true {
-				g.Assert(err).Equal(nil)
-				g.Assert(tags).Equal([]string{"v1.0.0", "latest"})
-			}
-			if tags, err := CreateDockerImageTags(dotnetProjectMaster); true {
-				g.Assert(err).Equal(nil)
-				g.Assert(tags).Equal([]string{"v1.0.1", "latest"})
-			}
-			if tags, err := CreateDockerImageTags(otherProjectMaster); true {
-				g.Assert(err).Equal(nil)
-				g.Assert(tags).Equal([]string{"master_0_0123456", "latest"})
-			}
+		g.Describe("Node", func() {
+			g.It("Development", func() {
+				if tags, err := CreateDockerImageTags(nodeProjectDev); true {
+					g.Assert(err).Equal(nil)
+					g.Assert(tags).Equal([]string{"owner_repo_my-Branch_1.0.0_0_0123456"})
+				}
+			})
+
+			g.It("Master", func() {
+				if tags, err := CreateDockerImageTags(nodeProjectMaster); true {
+					g.Assert(err).Equal(nil)
+					g.Assert(tags).Equal([]string{"v1.0.0", "latest"})
+				}
+			})
+		})
+		g.Describe("Dotnet", func() {
+			g.It("Development", func() {
+				if tags, err := CreateDockerImageTags(dotnetProjectDev); true {
+					g.Assert(err).Equal(nil)
+					g.Assert(tags).Equal([]string{"owner_repo_my-Branch_1.0.1_0_0123456"})
+				}
+			})
+			g.It("Master", func() {
+				if tags, err := CreateDockerImageTags(dotnetProjectMaster); true {
+					g.Assert(err).Equal(nil)
+					g.Assert(tags).Equal([]string{"v1.0.1", "latest"})
+				}
+			})
+		})
+		g.Describe("Other", func() {
+			g.It("Development", func() {
+				if tags, err := CreateDockerImageTags(otherProjectDev); true {
+					g.Assert(err).Equal(nil)
+					g.Assert(tags).Equal([]string{"owner_repo_my-Branch_0_0123456"})
+				}
+			})
+			g.It("Master", func() {
+				if tags, err := CreateDockerImageTags(otherProjectMaster); true {
+					g.Assert(err).Equal(nil)
+					g.Assert(tags).Equal([]string{"master_0_0123456", "latest"})
+				}
+			})
 		})
 	})
 }
