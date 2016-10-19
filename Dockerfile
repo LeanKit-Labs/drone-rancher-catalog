@@ -1,4 +1,5 @@
-FROM docker:1.11-dind
+FROM rancher/docker:v1.10.2
 
-ADD drone-rancher-catalog /bin/
-ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh", "/bin/drone-rancher-catalog"]
+ADD drone-rancher-catalog /go/bin/
+VOLUME /var/lib/docker
+ENTRYPOINT ["/usr/bin/dockerlaunch", "/go/bin/drone-rancher-catalog"]

@@ -10,6 +10,7 @@ type Plugin struct {
 	DockerHubRepo       string `json:"docker_hub_repo"`
 	DockerHubUser       string `json:"docker_hub_user"`
 	DockerHubPass       string `json:"docker_hub_pass"`
+	DockerHubEmail      string `json:"docker_hub_email"`
 	GithubAccessToken   string `json:"github_access_token"`
 	RancherCatalogRepo  string `json:"rancher_catalog_repo"`
 	RancherCatalogName  string `json:"rancher_catalog_name"`
