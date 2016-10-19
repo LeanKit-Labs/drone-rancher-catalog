@@ -225,7 +225,6 @@ func commitFile(githubClient *github.Client, owner string, repo string, path str
 		Content: contents,
 		Branch:  &branch,
 	}
-	fmt.Println(path)
 	_, _, err := githubClient.Repositories.CreateFile(owner, repo, path, &opts)
 	if err != nil {
 		return err
@@ -249,17 +248,17 @@ func (t *BuiltTemplate) Commit(accessToken string, owner string, repo string, bu
 		return nil, err
 	}
 	if number == 0 { //new branch
-		if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/catalogIcon.png", t.branch), t.Icon, fmt.Sprintf("Drone Build #%d: Changine Icon", buildNum)); err != nil {
+		if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/catalogIcon.png", t.branch), t.Icon, fmt.Sprintf("Drone Build #%d: Adding Icon", buildNum)); err != nil {
 			return nil, err
 		}
-		if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/config.yml", t.branch), []byte(t.Config), fmt.Sprintf("Drone Build #%d: Changine config.yml", buildNum)); err != nil {
+		if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/config.yml", t.branch), []byte(t.Config), fmt.Sprintf("Drone Build #%d: Adding config.yml", buildNum)); err != nil {
 			return nil, err
 		}
 	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/docker-compose.yml", t.branch, number), []byte(t.DockerCompose), fmt.Sprintf("Drone Build #%d: Changine docker-compose.yml", buildNum)); err != nil {
+	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/docker-compose.yml", t.branch, number), []byte(t.DockerCompose), fmt.Sprintf("Drone Build #%d: Changing docker-compose.yml", buildNum)); err != nil {
 		return nil, err
 	}
-	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/rancher-compose.yml", t.branch, number), []byte(t.RancherCompose), fmt.Sprintf("Drone Build #%d: Changine rancher-compose.yml", buildNum)); err != nil {
+	if err = commitFile(githubClient, owner, repo, fmt.Sprintf("templates/%s/%d/rancher-compose.yml", t.branch, number), []byte(t.RancherCompose), fmt.Sprintf("Drone Build #%d: Changing rancher-compose.yml", buildNum)); err != nil {
 		return nil, err
 	}
 	var info CatalogInfo

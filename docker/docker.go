@@ -11,9 +11,10 @@ import (
 	"github.com/LeanKit-Labs/drone-rancher-catalog/types"
 )
 
-const daemonStoragePath = "/var/lib/docker"
-const dockerCmd string = "/usr/local/bin/docker"
+const daemonStoragePath = "/drone/docker"
+const dockerCmd string = "/usr/bin/docker"
 const dockerFilename = "Dockerfile"
+const registry = "https://index.docker.io/v1/"
 const dockerContext = "."
 
 //ew global, the intent is that this is set by a single exported function (like a c_tor)
@@ -24,7 +25,6 @@ var workingDir = ""
 func PublishImage(image string, imageTags []string, p types.Plugin) error {
 
 	workingDir = p.Workspace
-
 	fmt.Println("starting daemon")
 	if err := startDaemon(p.DockerStorageDriver); err != nil {
 		return err
@@ -34,7 +34,6 @@ func PublishImage(image string, imageTags []string, p types.Plugin) error {
 	for _, tag := range imageTags {
 
 		fullImageName := fmt.Sprintf("%s:%s", image, tag)
-
 		if err := buildImage(fullImageName); err != nil {
 			return err
 		}
@@ -42,7 +41,7 @@ func PublishImage(image string, imageTags []string, p types.Plugin) error {
 		//push to docker hub, could be done asynchronously
 		if !p.DryRun {
 			fmt.Println("docker login")
-			if err := login(p.DockerHubUser, p.DockerHubPass); err != nil {
+			if err := login(p.DockerHubUser, p.DockerHubPass, p.DockerHubEmail); err != nil {
 				return err
 			}
 
@@ -57,52 +56,45 @@ func PublishImage(image string, imageTags []string, p types.Plugin) error {
 }
 
 func startDaemon(storageDriver string) error {
-	doneChan := make(chan error)
+
 	args := []string{"daemon", "-g", daemonStoragePath}
 
 	if storageDriver != "" {
 		args = append(args, "-s", storageDriver)
 	}
 
-	cmd := createCmd(args, true)
+	cmd := createCmd(args, false)
 
 	//start the daemon in the background
 	go func() {
-		err := cmd.Run()
-		if err != nil {
-			doneChan <- err
-		}
-
-		//poll until daemon is available or throw error
-		isUp := false
-		for i := 1; i <= 3; i++ {
-			if err := createCmd([]string{"info"}, true).Run(); err == nil {
-				isUp = true
-				break
-			}
-
-			time.Sleep(time.Second * time.Duration(i))
-		}
-
-		if isUp {
-			doneChan <- nil
-		} else {
-			doneChan <- errors.New("Timeout exceeded while starting docker daemon")
-		}
-
-		close(doneChan)
+		cmd.Run() //this never returns :(
 	}()
 
-	err := <-doneChan
+	//poll until daemon is available or throw error
+	isUp := false
+	for i := 1; i <= 90; i++ {
+		if err := createCmd([]string{"info"}, true).Run(); err == nil {
+			isUp = true
+			time.Sleep(1 * time.Second)
+			break
+		}
+	}
 
-	return err
+	if !isUp {
+		createCmd([]string{"info"}, false).Run()
+		return errors.New("Timeout exceeded while starting docker daemon")
+	}
+
+	return nil
+
 }
 
-func login(dockerUser string, dockerPass string) error {
+func login(dockerUser string, dockerPass string, dockerEmail string) error {
 	args := []string{
 		"login",
 		"-u", dockerUser,
 		"-p", dockerPass,
+		"-e", dockerEmail, registry,
 	}
 	return createCmd(args, false).Run()
 }

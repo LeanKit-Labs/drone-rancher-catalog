@@ -34,11 +34,6 @@ func getJSONVersionReader(fname string) func() (string, error) {
 	}
 }
 
-var projectMap = map[string]func() (string, error){
-	"node":        getJSONVersionReader("package.json"),
-	"dotnet-core": getJSONVersionReader("project.json"),
-}
-
 func replaceUnderscores(str string) string {
 	return strings.Replace(str, "_", "-", -1)
 }
@@ -47,6 +42,11 @@ func replaceUnderscores(str string) string {
 //of tags to use when publishing the project image to Docker Hub
 //TODO: this function might not need to take an error
 func CreateDockerImageTags(p types.Plugin) ([]string, error) {
+
+	var projectMap = map[string]func() (string, error){
+		"node":        getJSONVersionReader(fmt.Sprintf("%s/package.json", p.Workspace)),
+		"dotnet-core": getJSONVersionReader(fmt.Sprintf("%s/project.json", p.Workspace)),
+	}
 
 	//read version
 	version := ""

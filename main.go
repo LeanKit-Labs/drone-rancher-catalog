@@ -25,7 +25,7 @@ var version string
 		-generate a catalog entry and push to github
 */
 func main() {
-
+	fmt.Println("starting drone-rancher-catalog")
 	/*
 	   Drone pkg types are abstracted into "plugin" in order
 	   to make the migration to Drone's 0.5 way of getting
@@ -69,14 +69,13 @@ func exec(p types.Plugin) error {
 	//build tag
 	//doing this outside of subpackage to support potential use cases where the
 	//docker hub repo and docker hub repo are not the same
-	dockerImage := fmt.Sprintf("%s/%s", p.DockerHubUser, p.DockerHubRepo)
 	imageTags, err := tag.CreateDockerImageTags(p)
 
 	if err != nil {
 		return err
 	}
 	//publish docker image
-	if err := docker.PublishImage(dockerImage, imageTags, p); err != nil {
+	if err := docker.PublishImage(p.DockerHubRepo, imageTags, p); err != nil {
 		return err
 	}
 
@@ -106,11 +105,10 @@ func exec(p types.Plugin) error {
 	}
 	//output catalog entry info to temp file for downstream deployment plugin
 	data, err := yaml.Marshal(&buildCatalogs)
-	fmt.Println(buildCatalogs)
 	if err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(".CatalogData.yml", []byte(data), 0644); err != nil {
+	if err = ioutil.WriteFile("/drone/.CatalogData.yml", []byte(data), 0644); err != nil {
 		return err
 	}
 
