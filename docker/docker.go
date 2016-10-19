@@ -11,11 +11,20 @@ import (
 	"github.com/LeanKit-Labs/drone-rancher-catalog/types"
 )
 
-const daemonStoragePath = "/drone/docker"
-const dockerCmd string = "/usr/bin/docker"
-const dockerFilename = "Dockerfile"
-const registry = "https://index.docker.io/v1/"
-const dockerContext = "."
+//DaemonStoragePath the storage path
+const DaemonStoragePath = "/drone/docker"
+
+//DockerCmd the docker executable
+const DockerCmd string = "/usr/bin/docker"
+
+//DockerFilename the docker file
+const DockerFilename = "Dockerfile"
+
+//Registry the docker registry
+const Registry = "https://index.docker.io/v1/"
+
+//DockerContext the docker context
+const DockerContext = "."
 
 //ew global, the intent is that this is set by a single exported function (like a c_tor)
 var workingDir = ""
@@ -57,13 +66,13 @@ func PublishImage(image string, imageTags []string, p types.Plugin) error {
 
 func startDaemon(storageDriver string) error {
 
-	args := []string{"daemon", "-g", daemonStoragePath}
+	args := []string{"daemon", "-g", DaemonStoragePath}
 
 	if storageDriver != "" {
 		args = append(args, "-s", storageDriver)
 	}
 
-	cmd := createCmd(args, false)
+	cmd := CreateCmd(args, false)
 
 	//start the daemon in the background
 	go func() {
@@ -73,7 +82,7 @@ func startDaemon(storageDriver string) error {
 	//poll until daemon is available or throw error
 	isUp := false
 	for i := 1; i <= 90; i++ {
-		if err := createCmd([]string{"info"}, true).Run(); err == nil {
+		if err := CreateCmd([]string{"info"}, true).Run(); err == nil {
 			isUp = true
 			time.Sleep(1 * time.Second)
 			break
@@ -81,7 +90,7 @@ func startDaemon(storageDriver string) error {
 	}
 
 	if !isUp {
-		createCmd([]string{"info"}, false).Run()
+		CreateCmd([]string{"info"}, false).Run()
 		return errors.New("Timeout exceeded while starting docker daemon")
 	}
 
@@ -94,9 +103,10 @@ func login(dockerUser string, dockerPass string, dockerEmail string) error {
 		"login",
 		"-u", dockerUser,
 		"-p", dockerPass,
-		"-e", dockerEmail, registry,
+		"-e", dockerEmail,
+		Registry,
 	}
-	return createCmd(args, false).Run()
+	return CreateCmd(args, false).Run()
 }
 
 func buildImage(image string) error {
@@ -104,12 +114,12 @@ func buildImage(image string) error {
 		"build",
 		"--pull=true",
 		"--rm=true",
-		"-f", dockerFilename,
+		"-f", DockerFilename,
 		"-t", image,
 		".",
 	}
 
-	return createCmd(args, true).Run()
+	return CreateCmd(args, true).Run()
 }
 
 func pushImage(image string) error {
@@ -117,12 +127,12 @@ func pushImage(image string) error {
 		"push",
 		image,
 	}
-	return createCmd(args, false).Run()
+	return CreateCmd(args, false).Run()
 }
 
-//helper for executing shell commands
-func createCmd(args []string, supressIO bool) *exec.Cmd {
-	cmd := exec.Command(dockerCmd, args...)
+//CreateCmd helper for executing shell commands
+func CreateCmd(args []string, supressIO bool) *exec.Cmd {
+	cmd := exec.Command(DockerCmd, args...)
 	cmd.Dir = workingDir
 
 	if supressIO {

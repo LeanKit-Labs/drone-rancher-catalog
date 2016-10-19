@@ -42,7 +42,6 @@ func replaceUnderscores(str string) string {
 //of tags to use when publishing the project image to Docker Hub
 //TODO: this function might not need to take an error
 func CreateDockerImageTags(p types.Plugin) ([]string, error) {
-
 	var projectMap = map[string]func() (string, error){
 		"node":        getJSONVersionReader(fmt.Sprintf("%s/package.json", p.Workspace)),
 		"dotnet-core": getJSONVersionReader(fmt.Sprintf("%s/project.json", p.Workspace)),
@@ -69,7 +68,7 @@ func CreateDockerImageTags(p types.Plugin) ([]string, error) {
 	//return the long tag
 	//githubOwner_githubRepo_branch_semVer_globalProjectNum_shortCommitSHA
 	if version != "" {
-		return []string{fmt.Sprintf("%s_%s_%s_%s_%d_%s", p.Repo.Owner, p.Repo.Name, p.Build.Branch, version, p.Build.Number, p.Build.Commit[:7])}, nil
+		return []string{fmt.Sprintf("%s_%s_%s_%s_%d_%s", replaceUnderscores(p.Repo.Owner), replaceUnderscores(p.Repo.Name), replaceUnderscores(p.Build.Branch), version, p.Build.Number, p.Build.Commit[:7])}, nil
 	}
-	return []string{fmt.Sprintf("%s_%s_%s_%d_%s", p.Repo.Owner, p.Repo.Name, p.Build.Branch, p.Build.Number, p.Build.Commit[:7])}, nil
+	return []string{fmt.Sprintf("%s_%s_%s_%d_%s", replaceUnderscores(p.Repo.Owner), replaceUnderscores(p.Repo.Name), replaceUnderscores(p.Build.Branch), p.Build.Number, p.Build.Commit[:7])}, nil
 }

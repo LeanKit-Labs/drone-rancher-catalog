@@ -17,3 +17,5 @@ import:
   - github
 - package: golang.org/x/oauth2
 - package: gopkg.in/yaml.v2
+- package: github.com/franela/goblin
+  version: ^0.0.1

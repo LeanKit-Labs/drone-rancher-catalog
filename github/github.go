@@ -147,19 +147,14 @@ func NewGenericTemplate(owner string, repo string, token string) (*GenericTempla
 
 }
 
-func fixTemplate(p *types.Plugin, name string, templatedString, tag string) (string, error) {
+func fixTemplate(args *tmplArguments, name string, templatedString string) (string, error) {
 	tmpl, err := template.New(name).Parse(templatedString)
 	if err != nil {
 		return "", err
 	}
 
-	var args tmplArguments
-	args.Branch = p.Branch
-	args.Count = p.Build.Number
-	args.Tag = tag
-
 	var doc bytes.Buffer
-	if err := tmpl.Execute(&doc, args); err != nil {
+	if err := tmpl.Execute(&doc, *args); err != nil {
 		return "", err
 	}
 	return doc.String(), nil
@@ -174,17 +169,22 @@ func (t *GenericTemplate) SubBuildInfo(p *types.Plugin, tag string) (*BuiltTempl
 
 	final.Icon = t.Icon
 
-	val1, err1 := fixTemplate(p, "docker-compose.yml", t.DockerCompose, tag)
+	var args tmplArguments
+	args.Branch = p.Branch
+	args.Count = p.Build.Number
+	args.Tag = tag
+
+	val1, err1 := fixTemplate(&args, "docker-compose.yml", t.DockerCompose)
 	if err1 != nil {
 		return nil, err1
 	}
 	final.DockerCompose = val1
-	val2, err2 := fixTemplate(p, "rancher-compose.yml", t.RancherCompose, tag)
+	val2, err2 := fixTemplate(&args, "rancher-compose.yml", t.RancherCompose)
 	if err2 != nil {
 		return nil, err2
 	}
 	final.RancherCompose = val2
-	val3, err3 := fixTemplate(p, "config.yml", t.Config, tag)
+	val3, err3 := fixTemplate(&args, "config.yml", t.Config)
 	if err3 != nil {
 		return nil, err3
 	}

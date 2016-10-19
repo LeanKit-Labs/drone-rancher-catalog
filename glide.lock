@@ -1,5 +1,5 @@
-hash: 46d4bdc1d31885a16bf62e400509e5a79daf0e01d3599f8a56f24e681deaffd2
-updated: 2016-10-14T10:55:14.664914574-05:00
+hash: af9cd38e27e5f1f0f85c6d996545915cad5cc8a56b3a28401814fd12e3560710
+updated: 2016-10-19T14:33:15.822492472-05:00
 imports:
 - name: github.com/asaskevich/govalidator
   version: 7b3beb6df3c42abd3509abfc3bcacc0fbfb7c877
@@ -10,12 +10,14 @@ imports:
   subpackages:
   - drone
   - plugin
+- name: github.com/franela/goblin
+  version: 74c9fe110d4bfd04c222a089a309e0a97e258534
 - name: github.com/golang/protobuf
   version: 1f49d83d9aa00e6ce4fc8258c71cc7786aec968a
   subpackages:
   - proto
 - name: github.com/google/go-github
-  version: 1bc362c7737e51014af7299e016444b654095ad9
+  version: ed33550bbf49ddffcc36e1309d3f58ed0b6c2305
   subpackages:
   - github
 - name: github.com/google/go-querystring
