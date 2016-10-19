@@ -19,3 +19,5 @@ import:
 - package: gopkg.in/yaml.v2
 - package: github.com/franela/goblin
   version: ^0.0.1
+- package: github.com/h2non/gock
+  version: ~1.0.1

@@ -1,5 +1,5 @@
-hash: af9cd38e27e5f1f0f85c6d996545915cad5cc8a56b3a28401814fd12e3560710
-updated: 2016-10-19T14:33:15.822492472-05:00
+hash: 06b51131e0f7e1fad6d5beb7cc3b2c9b2676e402520104f1b843d1af61355015
+updated: 2016-10-19T16:09:38.231684888-05:00
 imports:
 - name: github.com/asaskevich/govalidator
   version: 7b3beb6df3c42abd3509abfc3bcacc0fbfb7c877
@@ -24,6 +24,8 @@ imports:
   version: 9235644dd9e52eeae6fa48efd539fdc351a0af53
   subpackages:
   - query
+- name: github.com/h2non/gock
+  version: 94f351a7b5b664969d46263771db3e834edca0f1
 - name: github.com/joho/godotenv
   version: 4ed13390c0acd2ff4e371e64d8b97c8954138243
   subpackages:
